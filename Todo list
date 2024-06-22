@@ -1,0 +1,107 @@
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+class TodoListApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("To-Do List App")
+
+        # Tasks list
+        self.tasks = []
+
+        # Create task input
+        self.task_entry = tk.Entry(root, width=50, font=('Arial', 12))
+        self.task_entry.grid(row=0, column=0, padx=10, pady=10)
+
+        # Create task button
+        self.add_task_button = tk.Button(root, text="Add Task", command=self.add_task, bg="#4CAF50", fg="white", font=('Arial', 12, 'bold'))
+        self.add_task_button.grid(row=0, column=1, padx=10, pady=10)
+
+        # Task list with checkboxes and icons
+        self.task_treeview = ttk.Treeview(root, columns=("Task", "Status"), show="headings", height=15)
+        self.task_treeview.heading("Task", text="Task", anchor=tk.CENTER)
+        self.task_treeview.heading("Status", text="Status", anchor=tk.CENTER)
+        self.task_treeview.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+
+        # Configure tags for alternating row colors
+        self.task_treeview.tag_configure('evenrow', background='#f0f0f0')
+        self.task_treeview.tag_configure('oddrow', background='white')
+
+        # Buttons for managing tasks
+        self.update_button = tk.Button(root, text="Update", command=self.update_task, bg="#008CBA", fg="white", font=('Arial', 12, 'bold'))
+        self.update_button.grid(row=2, column=0, padx=10, pady=10)
+
+        self.delete_button = tk.Button(root, text="Delete", command=self.delete_task, bg="#f44336", fg="white", font=('Arial', 12, 'bold'))
+        self.delete_button.grid(row=2, column=1, padx=10, pady=10)
+
+        # Populate initial tasks
+        self.update_task_listview()
+
+        # Bind double click on item to mark as done
+        self.task_treeview.bind("<Double-1>", self.toggle_task_status)
+
+    def add_task(self):
+        task = self.task_entry.get().strip()
+        if task:
+            self.tasks.append({"task": task, "status": False})
+            self.update_task_listview()
+            self.task_entry.delete(0, tk.END)
+        else:
+            messagebox.showwarning("Warning", "Task cannot be empty!")
+
+    def update_task(self):
+        selected_item = self.task_treeview.selection()
+        if selected_item:
+            task = self.task_entry.get().strip()
+            if task:
+                index = int(selected_item[0][1:]) - 1  # Extracting index from item ID
+                self.tasks[index]["task"] = task
+                self.update_task_listview()
+                self.task_entry.delete(0, tk.END)
+            else:
+                messagebox.showwarning("Warning", "Task cannot be empty!")
+
+    def delete_task(self):
+        selected_items = self.task_treeview.selection()
+        if selected_items:
+            index = int(selected_items[0][1:]) - 1  # Extracting index from item ID
+            self.tasks.pop(index)
+            self.update_task_listview()
+
+    def update_task_listview(self):
+        # Clear previous items
+        for item in self.task_treeview.get_children():
+            self.task_treeview.delete(item)
+
+        # Insert updated tasks
+        for idx, task_info in enumerate(self.tasks, start=1):
+            task_text = task_info["task"]
+            status_text = "Done" if task_info["status"] else "Pending"
+
+            self.task_treeview.insert("", "end", values=(task_text, status_text), iid=f"I{idx}")
+
+            # Apply alternating row colors
+            tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
+            self.task_treeview.item(f"I{idx}", tags=(tag,))
+
+    def toggle_task_status(self, event):
+        selected_item = self.task_treeview.selection()
+        if selected_item:
+            index = int(selected_item[0][1:]) - 1  # Extracting index from item ID
+            self.tasks[index]["status"] = not self.tasks[index]["status"]
+            self.update_task_listview()
+
+    def run(self):
+        self.root.mainloop()
+
+# Create the main window
+root = tk.Tk()
+
+# Set window background color
+root.configure(background='#f0f0f0')
+
+# Create the TodoListApp instance
+todo_app = TodoListApp(root)
+
+# Run the application
+todo_app.run()
